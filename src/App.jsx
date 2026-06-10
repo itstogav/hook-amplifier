@@ -567,28 +567,40 @@ export default function HookAmplifier() {
     if (!url.trim()) return;
     setLoading(true);
     setError("");
-    setLoadingMsg("Reading your product URL...");
+    setLoadingMsg("Reading your product...");
 
     try {
-      // Extract product info from URL slug
-      const urlObj = new URL(url.startsWith('http') ? url : 'https://' + url);
-      const slug = urlObj.pathname.split('/').filter(Boolean).pop() || '';
-      const productName = slug.replace(/[-_]/g, ' ').replace(/\.html?$/, '').trim();
-      const domain = urlObj.hostname.replace('www.', '');
+      // Robustly extract product name from whatever the user typed
+      const raw = url.trim();
+      
+      // Try to get slug from URL path
+      let productName = raw;
+      let domain = "";
+      try {
+        const full = raw.startsWith("http") ? raw : "https://" + raw;
+        const urlObj = new URL(full);
+        domain = urlObj.hostname.replace("www.", "");
+        const parts = urlObj.pathname.split("/").filter(Boolean);
+        // grab last meaningful path segment
+        const slug = parts[parts.length - 1] || parts[parts.length - 2] || "";
+        if (slug) productName = slug.replace(/[-_]/g, " ").replace(/\.html?$/i, "").trim();
+      } catch {
+        // not a valid URL — treat the whole input as a product description
+        productName = raw;
+      }
 
-      const prompt = `You are an expert ecommerce ad copywriter. Based on this product URL, infer what the product is and generate video ad hooks.
+      const prompt = `You are an expert ecommerce ad copywriter. Generate video ad hooks for this product.
 
-URL: ${url}
-Product slug: ${productName}
-Store: ${domain}
+Product: ${productName}
+${domain ? "Store: " + domain : ""}
 
-Using the product name and store context, make reasonable inferences about what this product does, who buys it, and why. Do NOT try to visit the URL.
+Make reasonable inferences about what this product does, who buys it, and why. Do NOT try to visit any URL.
 
-Return a JSON object with this exact structure:
+Return ONLY valid JSON with this exact structure, no other text:
 {
   "product": {
-    "name": "short product name derived from the URL slug",
-    "description": "one sentence describing what it does and who it is for, inferred from the product name"
+    "name": "clean readable product name",
+    "description": "one sentence: what it does and who it is for"
   },
   "hooks": {
     "problem_aware": ["hook 1", "hook 2", "hook 3"],
@@ -601,18 +613,16 @@ Return a JSON object with this exact structure:
   }
 }
 
-Rules for hooks:
-- Each hook is 10 to 20 words maximum
-- Natural, conversational tone. Not salesy.
-- Written as if a real customer is speaking
-- No em dashes
-- No hashtags
-- Make each of the 3 variations meaningfully different from each other
-- problem_aware: name a specific problem the viewer already has. No solution yet.
-- problem_solution: state the problem and the fix in the same breath
+Hook rules:
+- 10 to 20 words each maximum
+- Natural conversational tone, written as if a real customer is speaking
+- No em dashes, no hashtags
+- Each of the 3 per type must be meaningfully different from each other
+- problem_aware: name a problem the viewer already has. No solution yet.
+- problem_solution: problem and fix in the same breath
 - curiosity: unexpected, disarming, makes them want to know more
 - social_proof: lead with a number, crowd behaviour, or review signal
-- contrarian: challenge a common assumption about the product category
+- contrarian: challenge a common assumption about this product category
 - transformation: before and after compressed into one line
 - urgency: lead with the offer, deadline, or stakes`;
 
@@ -624,7 +634,7 @@ Rules for hooks:
       setResults(null);
       setStep(2);
     } catch (e) {
-      setError("Could not read that URL. Make sure it includes https:// and points to a specific product page, then try again.");
+      setError("Something went wrong. Try entering just your product name instead, like: survival axe");
     } finally {
       setLoading(false);
       setLoadingMsg("");
@@ -757,7 +767,7 @@ Rules:
               <input
                 className="url-input"
                 type="text"
-                placeholder="e.g. https://www.yourstore.com/products/your-product-name"
+                placeholder="https://www.yourstore.com/products/your-product  or just type: survival axe"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && analyseProduct()}
