@@ -567,16 +567,28 @@ export default function HookAmplifier() {
     if (!url.trim()) return;
     setLoading(true);
     setError("");
-    setLoadingMsg("Analysing your product...");
+    setLoadingMsg("Reading your product URL...");
 
     try {
-      const prompt = `Analyse this product URL and generate video ad hooks for it: ${url}
+      // Extract product info from URL slug
+      const urlObj = new URL(url.startsWith('http') ? url : 'https://' + url);
+      const slug = urlObj.pathname.split('/').filter(Boolean).pop() || '';
+      const productName = slug.replace(/[-_]/g, ' ').replace(/\.html?$/, '').trim();
+      const domain = urlObj.hostname.replace('www.', '');
+
+      const prompt = `You are an expert ecommerce ad copywriter. Based on this product URL, infer what the product is and generate video ad hooks.
+
+URL: ${url}
+Product slug: ${productName}
+Store: ${domain}
+
+Using the product name and store context, make reasonable inferences about what this product does, who buys it, and why. Do NOT try to visit the URL.
 
 Return a JSON object with this exact structure:
 {
   "product": {
-    "name": "short product name",
-    "description": "one sentence describing what it does and who it is for"
+    "name": "short product name derived from the URL slug",
+    "description": "one sentence describing what it does and who it is for, inferred from the product name"
   },
   "hooks": {
     "problem_aware": ["hook 1", "hook 2", "hook 3"],
@@ -612,7 +624,7 @@ Rules for hooks:
       setResults(null);
       setStep(2);
     } catch (e) {
-      setError("Could not analyse that URL. Try pasting your product description instead, or check the URL and try again.");
+      setError("Could not read that URL. Make sure it includes https:// and points to a specific product page, then try again.");
     } finally {
       setLoading(false);
       setLoadingMsg("");
