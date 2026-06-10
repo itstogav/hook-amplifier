@@ -745,7 +745,7 @@ Rules:
               <input
                 className="url-input"
                 type="text"
-                placeholder="https://yourstore.com/products/your-product"
+                placeholder="e.g. https://www.yourstore.com/products/your-product-name"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && analyseProduct()}
@@ -753,6 +753,10 @@ Rules:
               <button className="btn btn-primary" onClick={analyseProduct} disabled={!url.trim()}>
                 Analyse
               </button>
+            </div>
+            <div style={{ fontSize: 11, color: "var(--mid)", marginTop: 8, lineHeight: 1.6 }}>
+              Copy the full URL from your browser address bar — include the https:// at the start.
+              Example: https://www.yourstore.com/products/portable-charger
             </div>
           </div>
         )}
