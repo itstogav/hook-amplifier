@@ -55,9 +55,14 @@ const HOOK_TYPES = [
 const SYSTEM_PROMPT = `You are an expert ecommerce ad copywriter specialising in short-form video hooks for Meta, TikTok, and Instagram Reels. You write in a natural, unscripted tone — conversational, not salesy. Hooks are 10 to 20 words maximum. Never use em dashes. Respond only with valid JSON.`;
 
 async function callClaude(messages, maxTokens = 1500) {
-  const res = await fetch("/api/claude", {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": window.__TBB_KEY__ || "",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-client-side-allow": "true",
+    },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: maxTokens,
